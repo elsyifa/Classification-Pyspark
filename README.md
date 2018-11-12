@@ -22,8 +22,8 @@ In general, the steps of classification in machine learning are:
    
 * Check Missing Values.
   Sometimes the data received is not clean. So, we need to check whether missing values or not. Output from this step is the name of columns which have missing values and the number of missing values. To check missing values, actually I created two method:
-  a. Using pandas dataframe, 
-  b. Using pyspark dataframe.
+   a. Using pandas dataframe, 
+   b. Using pyspark dataframe.
   But the prefer method is method using pyspark dataframe so if dataset is too large we can still calculate / check missing values.
 
 * Handle Missing Values.
@@ -58,9 +58,9 @@ In general, the steps of classification in machine learning are:
 
 * Feature Engineering.
   Before splitting the data train, all categorical variables must be made numerical. There are several approaches to categorical variables in SparkML, including:
-- StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
-- One-hot Encoding, which is mapping the label column (string label) on the binary column.
-- Vector assembler, which is mapping all columns in vector.
+  - StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
+  - One-hot Encoding, which is mapping the label column (string label) on the binary column.
+  - Vector assembler, which is mapping all columns in vector.
 
 
 * Split Data train to train and test.
