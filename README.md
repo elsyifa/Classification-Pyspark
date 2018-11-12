@@ -22,8 +22,8 @@ In general, the steps of classification in machine learning are:
    
 * Check Missing Values.
   Sometimes the data received is not clean. So, we need to check whether missing values or not. Output from this step is the name of columns which have missing values and the number of missing values. To check missing values, actually I created two method:
-   a. Using pandas dataframe, 
-   b. Using pyspark dataframe.
+   - Using pandas dataframe, 
+   - Using pyspark dataframe.
   But the prefer method is method using pyspark dataframe so if dataset is too large we can still calculate / check missing values.
 
 * Handle Missing Values.
@@ -46,10 +46,10 @@ In general, the steps of classification in machine learning are:
   Outlier is observations that fall below lower side or above upper side.
   To handle outlier we approach by replacing the value greater than upper side with upper side value and also replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
 
-  Q1 = the value that cut off 25% of the first data when it is sorted in ascending order.
-  Q2 = cut off data, or median, it's 50 % of the data
-  Q3 = the value that cut off 75% of the first data when it is sorted in ascending order.
-  IQR or interquartile range is range between Q1 and Q3. IQR = Q3 - Q1.
+   - Q1 = the value that cut off 25% of the first data when it is sorted in ascending order.
+   - Q2 = cut off data, or median, it's 50 % of the data
+   - Q3 = the value that cut off 75% of the first data when it is sorted in ascending order.
+   - IQR or interquartile range is range between Q1 and Q3. IQR = Q3 - Q1.
 
   Upper side = Q3 + 1.5 * IQR
   Lower side = Q1 - 1.5 * IQR
@@ -61,14 +61,41 @@ In general, the steps of classification in machine learning are:
   - StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
   - One-hot Encoding, which is mapping the label column (string label) on the binary column.
   - Vector assembler, which is mapping all columns in vector.
+  In this step, I created 
 
 
 * Split Data train to train and test.
-
+  In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
+  
 * Modelling.
-
+  Algorithm that used to make a model and prediction, they are:
+   - Logistic Regression Logistic regression used logit function in prediction the probability.
+   - Decision Tree This algorithm will find the most significant independent variable to create a group.
+   - Random Forest This algorithm build multiple decision trees and merges them together and use bagging method.
+   - Gradient Boosting This algorithm use boosting ensemble technic. This technique employs the logic in which the subsequent predictors    learn from the mistakes of the previous predictors.
+   
 * Evaluation.
+  To evaluate model I use four metrics, they are:
 
+    - ROC
+      ROC (Receiver Operating Characteristic) The graph shows the true positive rate versus the false positive rate. This metric is           between 0 and 1 with a better model scoring higher. An area of 1 represents a perfect test; an area of .5 represents a worthless         test.
+      So, The model is said to be good enaught if the value of the area under the curve is above 0.5.
+
+    - Gini Coefficient
+      Gini is ratio between the ROC curve and the diagnol line & the area of the above triangle. So, we can calculate Gini by this             formula: Gini = 2*AUC - 1 Such as AUC ROC, Gini above 50% or 60% is good model.
+
+    - Confusion Matrix
+      Confusion Matrix is a table is used to describe performance of a classification model. Some definition are: 
+          - Accuracy = Proportion of total number of predictions that were correct 
+          - Precision (Positive Predictive Value) : Proportion of positive cases that were correctly identified. 
+          - Negative Predictive Value : Proportion of negative cases that were correctly identified. 
+          - Sensitivity (Recall) : Proportion of actual positive cases which are correctly identified. 
+          - Specificity : Proportion of actual negative cases which are correctly identified.
+
+    - Log Loss
+      Log Loss is one of model performance evaluation in classification model. The purpose of model is to minimize log loss value. 
+      A perfect model would have of log loss of 0. Log Loss increase when predicted probability diverges from actual label.
+          
 * Hyper-Parameter Tuning.
 
 * Implementation Modelling to data test.
