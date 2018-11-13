@@ -78,7 +78,7 @@ In general, the steps of classification in machine learning are:
   
 * Handle insignificant categories in data train.
   
-  Sometimes there are categories with very few amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
+  Sometimes there are categories with fewest amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
   
   Note: the determination of threshold that category have very few amount is based on trial n error. In this case I used threshold 98% for maximum amount and 0.7% for minimum amount. Each categories in a column that have percentage under 0.7% will be replaced with category that has percentage equal or lower than 98%.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function.jpg)
