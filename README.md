@@ -11,10 +11,10 @@ In general, the steps of classification in machine learning are:
   Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter ',' or other. 
   
 * Check the data.
-  After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc.
+  After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc. In this part, we also do some changes like rename columns name if the column name too long, change the data type if data type not in accordance. Those changes apply in both data train and data test.
   
 * Define categorical and numerical variables.
-  In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually.
+  In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually. This part also apply in both data train and data test.
 
 * Sample data
    If the dataset is too large, we can take sample of data. 
@@ -25,6 +25,7 @@ In general, the steps of classification in machine learning are:
    - Using pandas dataframe, 
    - Using pyspark dataframe.
   But the prefer method is method using pyspark dataframe so if dataset is too large we can still calculate / check missing values.
+  Both data train and data test has to apply this step.
 
 * Handle Missing Values.
   The approach that used to handle missing values between numerical and categorical variables is different. For numerical variables I fill the missing values with average in it's columns. While for categorical values I fill missing values use most frequent category in that column, therefore count categories which has max values in each columns is needed.
@@ -44,7 +45,7 @@ In general, the steps of classification in machine learning are:
   
 * Handle outlier.
   Outlier is observations that fall below lower side or above upper side.
-  To handle outlier we approach by replacing the value greater than upper side with upper side value and also replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
+  To handle outlier we approach by replacing the value greater than upper side with upper side value and replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
 
    - Q1 = the value that cut off 25% of the first data when it is sorted in ascending order.
    - Q2 = cut off data, or median, it's 50 % of the data
@@ -54,18 +55,17 @@ In general, the steps of classification in machine learning are:
   Upper side = Q3 + 1.5 * IQR
   Lower side = Q1 - 1.5 * IQR
 
-  To calculate quantile in pyspark dataframe I created a function and then created function to calculate uper side, lower side, replacing upper side and replacing lower side. function of replacing upper side and lower side will looping as much as numbers of numerical variables in dataset (data train or data test).
+  To calculate quantile in pyspark dataframe I created a function and then created function to calculate uper side, lower side, replacing upper side and replacing lower side. function of replacing upper side and lower side will looping as much as numbers of numerical variables in dataset (data train or data test). This step also apply in both data train and data test.
 
 * Feature Engineering.
   Before splitting the data train, all categorical variables must be made numerical. There are several approaches to categorical variables in SparkML, including:
   - StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
   - One-hot Encoding, which is mapping the label column (string label) on the binary column.
   - Vector assembler, which is mapping all columns in vector.
-  In this step, I created 
-
+  In this step, first I check the distinct values in each categorical columns between data train and data test. If data train has distinct values more than data test in one of or more categorical column, data train and data test will be joined then apply feature engineering on that data combination, length of vector (result of feature engineering) must be same between data train and data test so we can move to the next step, modelling and prediction. But if distinct values between data train and data test same, we will apply feature angineering on data train and data test separately then move to the next step modelling and prediction.
 
 * Split Data train to train and test.
-  In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
+  This step just apply on data train. In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
   
 * Modelling.
   Algorithm that used to make a model and prediction, they are:
@@ -97,7 +97,10 @@ In general, the steps of classification in machine learning are:
       A perfect model would have of log loss of 0. Log Loss increase when predicted probability diverges from actual label.
           
 * Hyper-Parameter Tuning.
+  In this step, I provided hyper-parameter tuning script for all those model above. So could be compared the model evaluation between model with and without hyper parameter tuning. From those result we can choose model with the best evaluation to make prediction in data test. 
 
 * Implementation Modelling to data test.
+  After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. 
+  VIOLAAAAAA,, we got our prediction!!!!!
   
 
