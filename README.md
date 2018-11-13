@@ -58,7 +58,7 @@ In general, the steps of classification in machine learning are:
  
 
 * Compare categorical variables in data train and data test.
-  In this step, we check whether categories between data train and data test same or not. If not, categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
+ In this step, we check whether categories between data train and data test same or not. If not, categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/function_compare_categorical_variables.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/callfunction_compare_categorical_variables.jpg)
   
