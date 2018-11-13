@@ -9,7 +9,7 @@ In general, the steps of classification in machine learning are:
 
 * Load libraries
   
-  The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc.
+  The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc. Below the capture of all libraries are needed:
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_libraries.png)
 
 
@@ -21,7 +21,8 @@ In general, the steps of classification in machine learning are:
   
 * Check the data.
   
-  After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc. In this part, we also do some changes like rename columns name if the column name too long, change the data type if data type not in accordance. Those changes apply in both data train and data test.
+  After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc. In this part, we also do some changes like rename columns name if the column name too long, change the data type if data type not in accordance or drop unnecessary column and check the proportion of target. Those changes apply in both data train and data test.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_data.png)
   
   
 * Define categorical and numerical variables.
@@ -58,12 +59,14 @@ In general, the steps of classification in machine learning are:
  
 
 * Compare categorical variables in data train and data test.
+ 
  In this step, we check whether categories between data train and data test same or not. If not, categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/function_compare_categorical_variables.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/callfunction_compare_categorical_variables.jpg)
   
   
 * EDA 
+  
   Create distribution visualization in each variables to get some insight of dataset. Pictures below are example of visualization of data train.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA1.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA2.jpg)
@@ -74,7 +77,9 @@ In general, the steps of classification in machine learning are:
   
   
 * Handle insignificant categories in data train.
+  
   Sometimes there are categories with very few amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
+  
   Note: the determination of threshold that category have very few amount is based on trial n error. In this case I used threshold 98% for maximum amount and 0.7% for minimum amount. Each categories in a column that have percentage under 0.7% will be replaced with category that has percentage equal or lower than 98%.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/call_insignificant_categories_function.jpg)
@@ -82,11 +87,13 @@ In general, the steps of classification in machine learning are:
   
   
 * Handle insignificant categories in data test.
+  
   To handle insignificant categories in data test, I refer to insignificant categories in data train. Categories that replaced will be equated with data train to avoid differences categories between data train and data test. As known those differences will trigger error in feature angineering and modelling process.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function4.jpg)
 
 
 * Handle outlier.
+  
   Outlier is observations that fall below lower side or above upper side.
   To handle outlier we approach by replacing the value greater than upper side with upper side value and replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
 
@@ -99,26 +106,31 @@ In general, the steps of classification in machine learning are:
   Lower side = Q1 - 1.5 * IQR
 
   To calculate quantile in pyspark dataframe I created a function and then created function to calculate uper side, lower side, replacing upper side and replacing lower side. function of replacing upper side and lower side will looping as much as numbers of numerical variables in dataset (data train or data test). This step also apply in both data train and data test.
+  
   Pictures below are example of handle outlier in data train, for data test the treatment is the same just call the function and apply it to data test.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier2.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier3.png)
 
 * Feature Engineering.
+  
   Before splitting the data train, all categorical variables must be made numerical. There are several approaches to categorical variables in SparkML, including:
   - StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
   - One-hot Encoding, which is mapping the label column (string label) on the binary column.
   - Vector assembler, which is mapping all columns in vector.
+  
   In this step, first I check the distinct values in each categorical columns between data train and data test. If data train has distinct values more than data test in one or more categorical column, data train and data test will be joined then apply feature engineering on that data combination - this merger is needed to avoid error in modelling due to differences length of vector between data train and data test- length of vector (result of feature engineering of data combination) must be same between data train and data test so we can move to the next step, modelling and prediction. But if distinct values between data train and data test same, we will apply feature angineering on data train and data test separately then move to the next step modelling and prediction.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/feature_engineering.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/feature_engineering2.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/call_function_feature_engineering.png)
 
 * Split Data train to train and test.
+  
   This step just apply on data train. In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/split_data_train.png)
   
 * Modelling.
+  
   Algorithm that I used to make a model and prediction are:
    - Logistic Regression Logistic regression used logit function in prediction the probability.
    - Decision Tree This algorithm will find the most significant independent variable to create a group.
@@ -126,6 +138,7 @@ In general, the steps of classification in machine learning are:
    - Gradient Boosting This algorithm use boosting ensemble technic. This technique employs the logic in which the subsequent predictors    learn from the mistakes of the previous predictors.
    
 * Evaluation.
+  
   To evaluate model I used four metrics, they are:
     - ROC
       ROC (Receiver Operating Characteristic) The graph shows the true positive rate versus the false positive rate. This metric is           between 0 and 1 with a better model scoring higher. An area of 1 represents a perfect test; an area of .5 represents a worthless         test.
@@ -173,6 +186,7 @@ In general, the steps of classification in machine learning are:
     
   
 * Hyper-Parameter Tuning.
+  
   In this step, I provided hyper-parameter tuning script for all those model above. So could be compared the model evaluation between model with and without hyper parameter tuning. From those result we can choose model with the best evaluation to make prediction in data test. 
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_LogisticRegression.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_DecisionTree.png)
@@ -180,6 +194,7 @@ In general, the steps of classification in machine learning are:
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_GradientBoost.png)
 
 * Implementation Modelling to data test.
+  
   After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. In this case, I choose Logistic Regression and Gradient Boosting to make prediction. Then save the prediction into csv file.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test2.png)
