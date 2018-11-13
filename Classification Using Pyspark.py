@@ -225,4 +225,68 @@ print("catcolums_miss:", catcolums_miss)
 numcolumns_miss = [item[0] for item in df_miss.dtypes if item[1].startswith('int') | item[1].startswith('double')] #will select name of column with integer or double data type
 print("numcolumns_miss:", numcolumns_miss)
 
+#Drop missing value
+df_Nomiss=df_final.na.drop()
 
+#fill missing value in categorical variable with most frequent
+for x in catcolums_miss:
+    mode=df_Nomiss.groupBy(x).count().sort(col("count").desc()).collect()[0][0] #group by based on categories and count each categories and sort descending then take the first value in column
+    print(x, mode) #print name of columns and it's most categories 
+    df_final = df_final.na.fill({x:mode}) #fill missing value in each columns with most frequent
+
+#fill missing value in numerical variable with average
+for i in numcolumns_miss:
+    meanvalue = df_final.select(round(mean(i))).collect()[0][0] #calculate average in each numerical column
+    print(i, meanvalue) #print name of columns and it's average value
+    df_final=df_final.na.fill({i:meanvalue}) #fill missing value in each columns with it's average value
+    
+#Check Missing value after filling
+null_counts = count_nulls(df_final)
+null_counts
+
+
+#Check Missing Value in data test
+#We will cleansing missing values in pyspark dataframe.
+#Call function to count missing values in test_data
+null_test= count_nulls(test_data)
+null_test
+
+#take just name of columns that have missing values
+list_miss_test=[x[0] for x in null_test]
+list_miss_test
+
+#Create dataframe which just has list_cols_miss
+test_miss= test_data.select(*list_miss_test)
+
+#view data types in df_miss
+test_miss.dtypes
+
+#Define categorical columns and numerical columns which have missing value.
+### for categorical columns
+catcolums_miss_test=[item[0] for item in test_miss.dtypes if item[1].startswith('string')]  #will select name of column with string data type
+print("catcolums_miss_test:", catcolums_miss_test)
+
+### for numerical columns
+numcolumns_miss_test = [item[0] for item in test_miss.dtypes if item[1].startswith('int') | item[1].startswith('double')] #will select name of column with integer or double data type
+print("numcolumns_miss_test:", numcolumns_miss_test)
+
+#Drop missing value
+test_Nomiss=test_data.na.drop()
+
+#fill missing value in categorical variable with most frequent
+for x in catcolums_miss_test:
+    mode=test_Nomiss.groupBy(x).count().sort(col("count").desc()).collect()[0][0] #group by based on categories and count each categories and sort descending then take the first value in column
+    print(x, mode) #print name of columns and it's most categories 
+    test_data = test_data.na.fill({x:mode}) #fill missing value in each columns with most frequent
+
+#fill missing value in numerical variable with average
+for i in numcolumns_miss_test:
+    meanvalue_test = test_data.select(round(mean(i))).collect()[0][0] #calculate average in each numerical column
+    print(i, meanvalue_test) #print name of columns and it's average value
+    test_data=test_data.na.fill({i:meanvalue_test}) #fill missing value in each columns with it's average value
+    
+#Check Missing value after filling
+%time null_test = count_nulls(test_data)
+null_test
+
+    
