@@ -7,6 +7,10 @@ To test my template, I used data Home_Quote_Conversion from Kaggle https://www.k
 
 In general, the steps of classification in machine learning are:
 
+* Load libraries
+  The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc.
+  
+
 * Load Data into Spark Dataframe.
   Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter ',' or other. 
   
