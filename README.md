@@ -28,8 +28,10 @@ In general, the steps of classification in machine learning are:
   Both data train and data test has to apply this step.
 
 * Handle Missing Values.
-  The approach that used to handle missing values between numerical and categorical variables is different. For numerical variables I fill the missing values with average in it's columns. While for categorical values I fill missing values use most frequent category in that column, therefore count categories which has max values in each columns is needed.
-  
+  The approach that used to handle missing values between numerical and categorical variables is different. For numerical variables I fill the missing values with average in it's columns. While for categorical values I fill missing values use most frequent category in that column, therefore count categories which has max values in each columns is needed. 
+ ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_missing_values.jpg)
+ 
+
   
 * Compare categorical variables in data train and data test.
   In this step, we check whether categories between data train and data test same or not. Categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
