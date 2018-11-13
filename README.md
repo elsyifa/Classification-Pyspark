@@ -9,17 +9,23 @@ In general, the steps of classification in machine learning are:
 
 * Load libraries
   The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc.
-  
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_libraries.png)
+
 
 * Load Data into Spark Dataframe.
   Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter ',' or other. 
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_dataset_function.png)
+  
   
 * Check the data.
   After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc. In this part, we also do some changes like rename columns name if the column name too long, change the data type if data type not in accordance. Those changes apply in both data train and data test.
   
+  
 * Define categorical and numerical variables.
   In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually. This part also apply in both data train and data test.
-
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables1.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables2.png)
+  
 * Sample data
    If the dataset is too large, we can take sample of data. 
    Note: this step is optional.
@@ -39,6 +45,8 @@ In general, the steps of classification in machine learning are:
 
 * Compare categorical variables in data train and data test.
   In this step, we check whether categories between data train and data test same or not. Categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
+  
+  
   
 * EDA 
   Create distribution visualization in each variables to get some insight of dataset.
