@@ -101,6 +101,6 @@ In general, the steps of classification in machine learning are:
 
 * Implementation Modelling to data test.
   After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. 
-  VIOLAAAAAA,, we got our prediction!!!!!
+  **VIOLAAAAAA,, we got our prediction!!!!!
   
 
