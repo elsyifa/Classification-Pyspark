@@ -8,20 +8,24 @@ To test my template, I used data Home_Quote_Conversion from Kaggle https://www.k
 In general, the steps of classification in machine learning are:
 
 * Load libraries
+  
   The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_libraries.png)
 
 
 * Load Data into Spark Dataframe.
+  
   Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter ',' or other. 
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_dataset_function.png)
   
   
 * Check the data.
+  
   After load data, lets do some check of the dataset such as numbers of columns, numbers of observations, names of columns, type of columns, etc. In this part, we also do some changes like rename columns name if the column name too long, change the data type if data type not in accordance. Those changes apply in both data train and data test.
   
   
 * Define categorical and numerical variables.
+  
   In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually. This part also apply in both data train and data test.
   Pictures below is example of code of define categorical and numerical variables in data train.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables1.png)
@@ -29,10 +33,12 @@ In general, the steps of classification in machine learning are:
   
   
 * Sample data
-   If the dataset is too large, we can take sample of data. 
-   Note: this step is optional.
+  
+  If the dataset is too large, we can take sample of data. 
+  Note: this step is optional.
    
 * Check Missing Values.
+  
   Sometimes the data received is not clean. So, we need to check whether there are missing values or not. Output from this step is the name of columns which have missing values and the number of missing values. To check missing values, actually I created two method:
    - Using pandas dataframe, 
    - Using pyspark dataframe.
@@ -45,6 +51,7 @@ In general, the steps of classification in machine learning are:
   
   
 * Handle Missing Values.
+  
   The approach that used to handle missing values between numerical and categorical variables is different. For numerical variables I fill the missing values with average in it's columns. While for categorical values I fill missing values use most frequent category in that column, therefore count categories which has max values in each columns is needed. 
  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_missing_values.jpg)
  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_missing_values2.jpg)
