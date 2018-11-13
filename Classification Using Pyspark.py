@@ -289,4 +289,653 @@ for i in numcolumns_miss_test:
 %time null_test = count_nulls(test_data)
 null_test
 
+
+#Compare categorical columns in df_final and test_data
+#Function to check categorical columns in both data train and data test
+def check_category2(a1,a2,y):
+    """input are two dataframe you want to compare categorical variables and the colomn category name"""
+    print('column:',y)
+    #distinct1=a1.select([y]).distinct().count() #count distinct column in dataframe1
+    #distinct2=a2.select([y]).distinct().count() #count distinct column in dataframe2
+    #if distinct1 == distinct2:
+    var1=a1.select([y]).distinct() #define distinct category in column in dataframe1
+    var2=a2.select([y]).distinct() #define distinct category in column in dataframe2
+    diff2=var2.subtract(var1).collect() #define the different category in dataframe2, return is list
+    diff2=[r[y] for r in diff2] #just take the values
+    diff1=var1.subtract(var2).collect() #define the different category in dataframe1, return is list
+    diff1=[r[y] for r in diff1] #just take the values
+    if diff1 == diff2:
+        print('diff2:', diff2)
+        print('diff1:', diff1)
+        print('Columns match!!')
+    else:
+        if len(diff1)!=0 and len(diff2)==len(diff1):
+            print('diff2:', diff2)
+            print('diff1:', diff1)
+            a2=a2.replace(diff2, diff1, y) #replace the different category in dataframe2 with category in dataframe1
+            print('Columns match now!!')
+        else:
+            if len(diff2)!=len(diff1) and len(diff2)!=0:
+                print('diff2:', diff2)
+                print('diff1:', diff1)
+                dominant1=a1.groupBy(y).count().sort(col("count").desc()).collect()[0][0]
+                dominant2=a2.groupBy(y).count().sort(col("count").desc()).collect()[0][0] #define category dominant in dataframe2
+                print('dominant2:', dominant2)
+                print('dominant1:', dominant1)
+                a2=a2.replace(diff2, dominant1, y) #replace different category in dataframe2 with dominant category
+                print('Columns match now!!')
+            else:     
+                print('diff1:', diff1)
+                print('diff2:', diff2)
+    return a2
+
+#call function to check catgories in data train and test, whether same or not, if not, the different categories will be replaced.
+for y in cat_cols_test:
+    test_data=check_category2(df_final,test_data,y)
+  
+
+#EDA
+#Check distribution in each variables
+#Pyspark dataframe has limitation in visualization. Then to create visualization we have to convert pyspark dataframe to pandas dataframe.
+# convert spark dataframe to pandas for visualization
+df_pd=df_final.toPandas()
+
+#Barchart for categorical variable
+plt.figure(figsize=(20,10))
+plt.subplot(221)
+sns.countplot(x='label', data=df_pd, order=df_pd['label'].value_counts().index)
+plt.title('TARGET', fontsize=15)
+plt.subplot(222)
+sns.countplot(y='Field6', data=df_pd, order=df_pd['Field6'].value_counts().index)
+plt.title('Field6', fontsize=15)
+plt.subplot(223)
+sns.countplot(x='Field12', data=df_pd, order=df_pd['Field12'].value_counts().index)
+plt.title('Field12', fontsize=15)
+plt.show()
+
+#Barchart for categorical variable
+plt.figure(figsize=(20,10))
+plt.subplot(221)
+sns.countplot(y='CoverageField8', data=df_pd, order=df_pd['CoverageField8'].value_counts().index)
+plt.title('CoverageField8', fontsize=15)
+plt.subplot(222)
+sns.countplot(y='CoverageField9', data=df_pd, order=df_pd['CoverageField9'].value_counts().index)
+plt.title('CoverageField9', fontsize=15)
+plt.subplot(223)
+sns.countplot(y='SalesField7', data=df_pd, order=df_pd['SalesField7'].value_counts().index)
+plt.title('SalesField7', fontsize=15)
+plt.show()
+
+#Categorical vs Target visualization
+pd.crosstab(df_pd['Field6'], df_pd['label'], normalize='index').plot.bar(rot=0, stacked=True,
+            color=['green', 'red'], figsize=(4,4), title="Field6 VS label")
+plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+
+pd.crosstab(df_pd['Field12'], df_pd['label'], normalize='index').plot.bar(rot=0, stacked=True,                            
+            color=['green', 'red'], figsize=(4,4), title="Field12 VS label")
+plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+plt.show()
+
+#Numerical Variables
+#We have 260 numerical variables, and we will plot just some variables.
+#density plot Field7
+#plt.figure(figsize=(24,5))
+sns.distplot(df_pd['Field7'])
+plt.show()
+
+#Numerical vs Target visualization
+#show distribution 'Field7' vs 'label'
+#plt.figure(figsize=(20,8))
+sns.kdeplot(df_pd[df_pd["label"]==0]["Field7"], label="0", color="green")
+sns.kdeplot(df_pd[df_pd["label"]==1]["Field7"], label="1", color="red")
+plt.title("Field7 VS label")
+plt.show()
+
+#Check outlier in numerical variable
+df_pd[["Field7"]].boxplot(sym='g-*', grid=True)
+plt.show()
+
+
+#Insignificant Categories in Data train
+#Define the threshold for insignificant categories
+threshold=98
+threshold2=0.7
+
+#function to replace insignificant categories in data train
+def replace_cat2(f,cols):
+    """input are dataframe and categorical variables, replace insignificant categories (percentage <=0.7) with largest number
+    of catgories and output is new dataframe """
+    df_percent=f.groupBy(cols).count().sort(col("count").desc())\
+                .withColumn('total',sum(col('count')).over(window))\
+                .withColumn('Percent',col('count')*100/col('total')) #calculate the percentage-save in Percent columns from each categories
+    dominant_cat=df_percent.select(df_percent['Percent']).collect()[0][0] #calculate the highest percentage of category
+    count_dist=f.select([cols]).distinct().count() #calculate distinct values in that columns
+    if count_dist > 2 and dominant_cat <= threshold :
+        print('column:', cols)
+        cols_names.append(cols)  #combine with previous list
+        replacement=f.groupBy(cols).count().sort(col("count").desc()).collect()[0][0] #define dominant category 
+        print("replacement:",replacement)
+        replacing.append(replacement) #combine with previous list
+        insign_cat=df_percent.filter(df_percent['Percent']< threshold2).select(df_percent[cols]).collect() #calculate insignificant categories
+        insign_cat=[r[cols] for r in insign_cat] #just take the values
+        category.append(insign_cat) #combine with previous list
+        print("insign_cat:",insign_cat)
+        f=f.replace(insign_cat,replacement, cols) #replace insignificant categories with dominant categories
+    return f
+
+#call function replacing insignificant categories in data train
+replacing=[]
+cols_names=[]
+category=[]
+for cols in cat_cols:
+    df_final=replace_cat2(df_final,cols)
+
+#check length in list cols_names, category and replacing
+len(cols_names), len(category), len(replacing)
+
+#Create dataframe of replaced categories
+g=spark.createDataFrame(list(zip(cols_names, replacing, category)),['cols_names', 'replacing', 'category'])
+g.show(9)
+
+#Replacing Insignificant Categories in data test
+#We already have a dataframe containing any categories that need to be replaced, 
+#we got it when the process of replacing the insignificant categories in the data train, the data frame is called g. 
+#Based on those information, insignificant categories on data test will be replaced.
+cols_names_list=g.select('cols_names').collect() #select just cols_names from dataframe g
+cols_names_list=[r['cols_names'] for r in cols_names_list] #take just the values
+
+#function to replace insignificant categories in data test
+for z in cols_names_list:
+    print('cols_names:',z)
+    replacement_cat=g.filter(g['cols_names']== z).select(g['replacing']).collect()[0][0] #select values of replacing columns accoring to z in cols_names 
+    print('replacement_cat:', replacement_cat)
+    insignificant_cat=g.filter(g['cols_names']== z).select(g['category']).collect()[0][0] #select values of category columns accoring to z in cols_names
+    print('insignificant_cat:',insignificant_cat)
+    test_data=test_data.replace(insignificant_cat,replacement_cat, z) #replace insignificant cat with replacement value
     
+#Handle of outlier in data train
+#Calculate Upper&Lower side in pandas dataframe
+df_describe=df_pd.describe()
+df_describe
+
+#Calculate Upper&Lower side in pyspark dataframe
+#create quantile dataframe
+def quantile(e):
+    """Input is dataframe and return new dataframe with value of quantile from numerical columns"""
+    percentiles = [0.25, 0.5, 0.75]
+    quant=spark.createDataFrame(zip(percentiles, *e.approxQuantile(num_cols, percentiles, 0.0)),
+                               ['percentile']+num_cols) #calculate quantile from pyspark dataframe, 0.0 is relativeError,
+                                                        #The relative target precision to achieve (>= 0). If set to zero, 
+                                                        #the exact quantiles are computed, which could be very expensive
+                                                        #and aggregate the result with percentiles variable, 
+                                                        #then create pyspark dataframe
+    return quant
+
+#call quantile function 
+%time quantile=quantile(df_sample)
+
+#function to calculate uppler side
+def upper_value(b,c):
+    """Input is quantile dataframe and name of numerical column and Retrun upper value from the column"""
+    q1 = b.select(c).collect()[0][0] #select value of q1 from the column
+    q2 = b.select(c).collect()[1][0] #select value of q2 from the column
+    q3 = b.select(c).collect()[2][0] #select value of q3 from the column
+    IQR=q3-q1  #calculate the value of IQR
+    upper= q3 + (IQR*1.5)   #calculate the value of upper side
+    return upper
+
+#function to calculate lower side
+def lower_value(b,c):
+    """Input is quantile dataframe and name of numerical column and Retrun lower value from the column"""
+    q1 = b.select(c).collect()[0][0] #select value of q1 from the column
+    q2 = b.select(c).collect()[1][0] #select value of q2 from the column
+    q3 = b.select(c).collect()[2][0] #select value of q3 from the column
+    IQR=q3-q1                   #calculate the value of IQR
+    lower= q1 - (IQR*1.5)       #calculate the value of lower side
+    return lower
+
+#function for replacing outlier by upper side
+def replce_outlier_up2(d,col, value):
+    """Input is name of numerical column and it's upper side value"""
+    d=d.withColumn(col, F.when(d[col] > value , value).otherwise(d[col]))
+    return d
+
+#function for replacing outlier with lower side
+def replce_outlier_low2(d,col, value):
+    """Input is name of numerical column and it's lower side value"""
+    d=d.withColumn(col, F.when(d[col] < value , value).otherwise(d[col]))
+    return d
+
+#call function to calculate lower side and replace value under lower side with value lower side at all numerical variables
+for i in num_cols:
+    lower=lower_value(quantile,i)
+    df_final=replce_outlier_low2(df_final, i, lower)
+    
+#call function to calculate upper side and replace value above upper side with value upper side at all numerical variables
+for x in num_cols:
+    upper=upper_value(quantile,x)
+    df_final=replce_outlier_up2(df_final, x, upper)
+    
+#Handle of outlier in data test
+#create quantile dataframe
+def quantile(e):
+    """Input is dataframe and return new dataframe with value of quantile from numerical columns"""
+    percentiles = [0.25, 0.5, 0.75]
+    quant=spark.createDataFrame(zip(percentiles, *e.approxQuantile(num_cols_test, percentiles, 0.0)),
+                               ['percentile']+num_cols_test) #calculate quantile from pyspark dataframe, 0.0 is relativeError,
+                                                        #The relative target precision to achieve (>= 0). If set to zero, 
+                                                        #the exact quantiles are computed, which could be very expensive
+                                                        #and aggregate the result with percentiles variable, 
+                                                        #then create pyspark dataframe
+    return quant
+
+#call funtion quantile
+quantile=quantile(test_sample)
+
+#call function to calculate lower side and replace value under lower side with value lower side at all numerical variables
+for i in num_cols_test:
+    lower=lower_value(quantile,i)
+    test_data=replce_outlier_low2(test_data, i, lower)
+    
+#call function to calculate upper side and replace value above upper side with value upper side at all numerical variables
+for x in num_cols_test:
+    upper=upper_value(quantile,x)
+    test_data=replce_outlier_up2(test_data, x, upper)
+    
+#Feature Engineering
+#function to check distinct categories in data train and data test
+def check_distinct(a1,a2):
+    """input are two dataframe that you want to compare categorical variables and the output is 
+    total distinct categories in both dataframe"""
+    total1=0
+    total2=0
+    for y in cat_cols:
+        distinct1=a1.select([y]).distinct().count() #count distinct column in dataframe1
+        distinct2=a2.select([y]).distinct().count() #count distinct column in dataframe2
+        var1=a1.select([y]).distinct().collect() #define distinct category in column in dataframe1
+        var1=[r[y] for r in var1]
+        var2=a2.select([y]).distinct().collect()
+        var2=[r[y] for r in var2]
+        total1=total1+distinct1
+        total2=total2+distinct2   
+    return total1, total2  
+
+#function to execute feature engineering
+def feature_engineering(a1):    
+    """Function for feature engineering (StringIndexer and OneHotEncoder process)"""
+    cat_columns_string_vec = []
+    for c in cat_cols:
+        cat_columns_string= c+"_vec"
+        cat_columns_string_vec.append(cat_columns_string)
+    stringIndexer = [StringIndexer(inputCol=x, outputCol=x+"_Index")
+                  for x in cat_cols]
+    #use oneHotEncoder to convert categorical variable to binary
+    encoder = [OneHotEncoder(inputCol=x+"_Index", outputCol=y)
+           for x,y in zip(cat_cols, cat_columns_string_vec)]
+    #create list of stringIndexer and encoder with 2 dimension
+    tmp = [[i,j] for i,j in zip(stringIndexer, encoder)]
+    tmp = [i for sublist in tmp for i in sublist]
+    cols_assember=num_id + num_cols + cat_columns_string_vec
+    assembler=VectorAssembler(inputCols=cols_assember, outputCol='features')
+    tmp += [assembler]
+    pipeline=Pipeline(stages=tmp)
+    df_final_feat=pipeline.fit(a1).transform(a1)
+    return df_final_feat
+
+#fucntion to call fucntion feature_engineering and check_distinct
+def Main_feature_engineering(df,df2): 
+    """Function for calling check_distinct and feature_engineering. Then Join data train and data test if distinct categories 
+    between data train and data test not same then do feature engineering, If distinct same will do feature engineering data train
+    and data test separately"""
+    dist_total1, dist_total2=check_distinct(df,df2)   
+    if dist_total1!=dist_total2:
+        Label_df=df.select('Id', 'label')
+        df_final2=df.drop('label')
+        all_df =df_final2.union(df2)
+        all_df_feat=feature_engineering(all_df)
+        id_train=df.select('Id').collect()
+        id_train=[r['Id'] for r in id_train]
+        id_test=df2.select('Id').collect()
+        id_test=[r['Id'] for r in id_test]
+        a=all_df_feat.filter(all_df['Id'].isin(id_train))
+        b=all_df_feat.filter(all_df['Id'].isin(id_test))
+        a=a.join(Label_df, 'Id')
+    else:
+        a=feature_engineering(df)
+        b=feature_engineering(df2)        
+    return a,b
+
+#Split Data train to train and test
+#Split df_final to train and test, train 70% and test 30%. Define seed 24 so the random data that we split will not change.
+#we can define seed with any value
+data_train, data_test=data2.randomSplit([0.7,0.3], 24)
+
+
+#Modelling & Evaluation
+#Logistic Regression
+#Create logistic regression model to data train
+lr=LogisticRegression(featuresCol='features', labelCol='label')
+lr_model = lr.fit(data_train)
+
+#Transform model to data test
+lr_result = lr_model.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+lr_result.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Logistic Regression Evaluation
+#Evaluate model by checking accuracy and AUC value
+lr_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+lr_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+lr_AUC  = lr_eval.evaluate(lr_result)
+lr_ACC  = lr_eval2.evaluate(lr_result, {lr_eval2.metricName:"accuracy"})
+
+print("Logistic Regression Performance Measure")
+print("Accuracy = %0.2f" % lr_ACC)
+print("AUC = %.2f" % lr_AUC)
+
+#ROC Grafik
+#Create ROC grafik from lr_result
+PredAndLabels           = lr_result.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Logistic Regression Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Logistic Regression')
+plt.legend(loc="lower right")
+plt.show()
+
+#confusion Matrix
+cm_lr_result = lr_result.crosstab("prediction", "label")
+cm_lr_result = cm_lr_result.toPandas()
+cm_lr_result
+
+#calculate Accuracy, Sensitivity, Specificity, Precision
+TP = cm_lr_result["1"][0]
+FP = cm_lr_result["0"][0]
+TN = cm_lr_result["0"][1]
+FN = cm_lr_result["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = lr_AUC
+Gini = (2 * AUC - 1)
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+lr_proba=lr_result.select('probability')
+
+#Convert lr_probaspark dataframe to numpy array
+lr_proba= np.array(lr_result.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+lr_proba=lr_proba.reshape(-1, lr_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from logistic regression
+LogLoss = log_loss(y_test, lr_proba) 
+
+print("Log Loss Linear Regression:%.4f" % LogLoss)
+
+#Logistic Regression With Hyper-Parameter Tuning
+#Create logistic regression model to data train
+lr_hyper=LogisticRegression(featuresCol='features', labelCol='label')
+
+
+#Hyper-Parameter Tuning
+paramGrid_lr = ParamGridBuilder() \
+    .addGrid(lr_hyper.regParam, [0.1, 0.01]) \
+    .addGrid(lr_hyper.elasticNetParam, [0.8, 0.7]) \
+    .build()
+crossval_lr = CrossValidator(estimator=lr_hyper,
+                             estimatorParamMaps=paramGrid_lr,
+                             evaluator=BinaryClassificationEvaluator(),
+                             numFolds=3)
+#fit model to data train
+lr_model_hyper = crossval_lr.fit(data_train)
+
+#Transform model to data test
+lr_result_hyper = lr_model_hyper.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+lr_result_hyper.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Logistic Regression With Hyper-Parameter Tuning Evaluation
+#Evaluate model by checking accuracy and AUC value
+lr_hyper_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+lr_hyper_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+lr_hyper_AUC  = lr_hyper_eval.evaluate(lr_result_hyper)
+lr_hyper_ACC  = lr_hyper_eval2.evaluate(lr_result_hyper, {lr_hyper_eval2.metricName:"accuracy"})
+
+print("Logistic Regression Performance Measure")
+print("Accuracy = %0.2f" % lr_hyper_ACC)
+print("AUC = %.2f" % lr_hyper_AUC)
+
+#ROC Grafik
+PredAndLabels           = lr_result_hyper.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Logistic Regression Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Logistic Regression')
+plt.legend(loc="lower right")
+plt.show()
+
+#confusion matrix
+cm_lr_result_hyper = lr_result_hyper.crosstab("prediction", "label")
+cm_lr_result_hyper = cm_lr_result_hyper.toPandas()
+cm_lr_result_hyper
+
+#calculate Accuracy, Sensitivity, Specificity, Precision
+TP = cm_lr_result_hyper["1"][0]
+FP = cm_lr_result_hyper["0"][0]
+TN = cm_lr_result_hyper["0"][1]
+FN = cm_lr_result_hyper["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefisient from AUC
+AUC = lr_hyper_AUC
+Gini_lr_hyper = (2 * AUC - 1)
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_lr_hyper)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= titanic_test.select('label')
+lr_hyper_proba=lr_result_hyper.select('probability')
+
+#Convert lr_probaspark dataframe to numpy array
+lr_hyper_proba= np.array(lr_hyper_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+lr_hyper_proba=lr_hyper_proba.reshape(-1, lr_hyper_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from logistic regression hyper parameter
+LogLoss = log_loss(y_test, lr_hyper_proba) 
+
+print("Log Loss Linear Regression:%.4f" % LogLoss)
+
+
+#Decision Tree
+#Create decision tree model to data train
+dt=DecisionTreeClassifier(featuresCol = 'features', labelCol = 'label', maxDepth = 3)
+dt_model = dt.fit(data_train)
+
+##Transform model to data test
+dt_result = dt_model.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+dt_result.select('Id', 'label', 'prediction', 'probability').show(5)
+
+# Decision Tree Evaluation
+#Evaluate model by calculating accuracy and area under curve (AUC)
+dt_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+dt_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+dt_AUC  = dt_eval.evaluate(dt_result)
+dt_ACC  = dt_eval2.evaluate(dt_result, {dt_eval2.metricName:"accuracy"})
+
+print("Decision Tree Performance Measure")
+print("Accuracy = %0.2f" % dt_ACC)
+print("AUC = %.2f" % dt_AUC)
+
+#ROC Grafik
+PredAndLabels           = dt_result.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Decision Tree Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Decision Tree')
+plt.legend(loc="lower right")
+plt.show()
+
+#confusion matrix
+cm_dt_result = dt_result.crosstab("prediction", "label")
+cm_dt_result = cm_dt_result.toPandas()
+cm_dt_result
+
+#calculate accuracy, sensitivity, specificity and precision
+TP = cm_dt_result["1"][0]
+FP = cm_dt_result["0"][0]
+TN = cm_dt_result["0"][1]
+FN = cm_dt_result["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coeffiecient from AUC
+AUC = dt_AUC
+Gini_dt = (2 * AUC - 1)
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_dt)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+dt_proba=dt_result.select('probability')
+
+##Convert lr_probaspark dataframe to numpy array
+dt_proba= np.array(dt_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+dt_proba=dt_proba.reshape(-1, dt_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Decision Tree
+LogLoss = log_loss(y_test, dt_proba) 
+
+print("Log Loss Decision Tree:%.4f" % LogLoss)
+
+
