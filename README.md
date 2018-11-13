@@ -109,17 +109,17 @@ In general, the steps of classification in machine learning are:
 
 * Split Data train to train and test.
   This step just apply on data train. In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/split_data_train.png)
   
 * Modelling.
-  Algorithm that used to make a model and prediction, they are:
+  Algorithm that I used to make a model and prediction are:
    - Logistic Regression Logistic regression used logit function in prediction the probability.
    - Decision Tree This algorithm will find the most significant independent variable to create a group.
    - Random Forest This algorithm build multiple decision trees and merges them together and use bagging method.
    - Gradient Boosting This algorithm use boosting ensemble technic. This technique employs the logic in which the subsequent predictors    learn from the mistakes of the previous predictors.
    
 * Evaluation.
-  To evaluate model I use four metrics, they are:
-
+  To evaluate model I used four metrics, they are:
     - ROC
       ROC (Receiver Operating Characteristic) The graph shows the true positive rate versus the false positive rate. This metric is           between 0 and 1 with a better model scoring higher. An area of 1 represents a perfect test; an area of .5 represents a worthless         test.
       So, The model is said to be good enaught if the value of the area under the curve is above 0.5.
@@ -138,12 +138,44 @@ In general, the steps of classification in machine learning are:
     - Log Loss
       Log Loss is one of model performance evaluation in classification model. The purpose of model is to minimize log loss value. 
       A perfect model would have of log loss of 0. Log Loss increase when predicted probability diverges from actual label.
-          
+  Pictures below will explain how to create model and make a prediction and also evaluate those model with those four metrics.
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression_ev1.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression_ROC.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression_ROC_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/logistic_regression_Gini_LogLoss.png)
+    
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Decision_Tree.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Decision_Tree_ev1.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Decision_Tree_ROC.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Decision_Tree_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Decision_Tree_Gini_LogLoss.png)
+    
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Random_Forest.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Random_Forest_ev1.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Random_Forest_ROC.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Random_Forest_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/Random_Forest_Gini_LogLoss.png)
+    
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/gradient_boosting.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/gradient_boosting_ev1.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/gradient_boosting_ROC_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/gradient_boosting_confusion_matrix.png)
+    ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/gradient_boosting_Gini_LogLoss.png)
+    
+  
 * Hyper-Parameter Tuning.
   In this step, I provided hyper-parameter tuning script for all those model above. So could be compared the model evaluation between model with and without hyper parameter tuning. From those result we can choose model with the best evaluation to make prediction in data test. 
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_LogisticRegression.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_DecisionTree.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_Random_Forest.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/hyper_parameter_tuning_GradientBoost.png)
 
 * Implementation Modelling to data test.
-  After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. 
-  **VIOLAAAAAA,, we got our prediction!!!!!**
+  After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. In this case, I choose Logistic Regression and Gradient Boosting to make prediction. Then save the prediction into csv file.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test2.png)
   
-
+  **VIOLAAAAAA,, we got our prediction!!!!!**
+  For more details please see my code.
