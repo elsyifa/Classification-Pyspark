@@ -62,8 +62,8 @@ In general, the steps of classification in machine learning are:
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA2.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA3.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA4.jpg)
-  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA5.jpg)
-  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA6.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA5.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA6.png)
   
   
 * Handle insignificant categories in data train.
