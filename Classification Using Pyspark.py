@@ -68,3 +68,45 @@ def load_data(file_type):
     else:  
         df= spark.read.parquet("example.parquet") #path file that you want import
     return df
+
+#call function load_data
+df = load_data(file_type)
+
+#Initializing File Type and path for data test
+file_type = 'text'
+path=r'test.csv'
+delimeter=','
+
+#call function load_data
+test_data = load_data(file_type)
+
+#Check data
+#check type of data train and data test
+type(df)
+type(test_data)
+
+#show 5 observation in data train
+df.show(5)
+
+#show 5 observation in data test
+test_data.show(5)
+
+#Print Schema and count number of columns from data train
+len(df.columns), df.printSchema()
+
+#Print Schema and count number of columns from data test
+len(test_data.columns), test_data.printSchema()
+
+#drop column Original_Quote_Date from data train
+df_final=df.drop('Original_Quote_Date')
+
+#drop column Original_Quote_Date from data test
+test_data=test_data.drop('Original_Quote_Date')
+
+#calculate percentage of target and save in dataframe called target_percent
+target_percent=df_final.groupBy('label').count().sort(col("count").desc())\
+                        .withColumn('total',sum(col('count')).over(window))\
+                        .withColumn('Percent',col('count')*100/col('total')) 
+
+#show dataframe terget_percent to check the proportion
+target_percent.show()
