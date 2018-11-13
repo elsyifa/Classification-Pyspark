@@ -718,7 +718,7 @@ LogLoss = log_loss(y_test, lr_proba)
 print("Log Loss Linear Regression:%.4f" % LogLoss)
 
 #Logistic Regression With Hyper-Parameter Tuning
-#Create logistic regression model to data train
+#define logistic regression model
 lr_hyper=LogisticRegression(featuresCol='features', labelCol='label')
 
 
@@ -938,4 +938,595 @@ LogLoss = log_loss(y_test, dt_proba)
 
 print("Log Loss Decision Tree:%.4f" % LogLoss)
 
+#Decision Tree With Hyper-Parameter Tuning
+#define decision tree model
+dt_hyper=DecisionTreeClassifier(featuresCol = 'features', labelCol = 'label', impurity='gini')
 
+#Hyper-Parameter Tuning
+paramGrid_dt = ParamGridBuilder() \
+    .addGrid(dt_hyper.maxDepth, [5, 7]) \
+    .addGrid(dt_hyper.maxBins, [10,20]) \
+    .build()
+crossval_dt = CrossValidator(estimator=dt_hyper,
+                             estimatorParamMaps=paramGrid_dt,
+                             evaluator=BinaryClassificationEvaluator(),
+                             numFolds=5)
+#fit model to data train
+dt_model_hyper = crossval_dt.fit(data_train)
+
+#transform model to data test
+dt_result_hyper = dt_model_hyper.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling 
+dt_result_hyper.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Decision Tree With Hyper-Parameter Tuning Evaluation
+#Evaluate model by calculating accuracy and area under curve (AUC)
+dt_hyper_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+dt_hyper_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+dt_hyper_AUC  = dt_hyper_eval.evaluate(dt_result_hyper)
+dt_hyper_ACC  = dt_hyper_eval2.evaluate(dt_result_hyper, {dt_hyper_eval2.metricName:"accuracy"})
+
+print("Decision Tree Performance Measure")
+print("Accuracy = %0.2f" % dt_hyper_ACC)
+print("AUC = %.2f" % dt_hyper_AUC)
+
+#ROC Grafik
+PredAndLabels           = dt_result_hyper.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Decision Tree Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Decision Tree')
+plt.legend(loc="lower right")
+plt.show()
+
+#Confusion Matrix
+cm_dt_result_hyper = dt_result_hyper.crosstab("prediction", "label")
+cm_dt_result_hyper = cm_dt_result_hyper.toPandas()
+cm_dt_result_hyper
+
+#calculate accuracy, sensitivity, specificity and precision
+TP = cm_dt_result_hyper["1"][0]
+FP = cm_dt_result_hyper["0"][0]
+TN = cm_dt_result_hyper["0"][1]
+FN = cm_dt_result_hyper["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = dt_hyper_AUC
+Gini_dt_hyper= (2 * AUC -1)
+
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_dt_hyper)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+dt_hyper_proba=dt_result_hyper.select('probability')
+
+#Convert lr_probaspark dataframe to numpy array
+dt_hyper_proba= np.array(dt_hyper_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+dt_hyper_proba=dt_hyper_proba.reshape(-1, dt_hyper_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Decision Tree hyper parameter
+LogLoss = log_loss(y_test, dt_hyper_proba) 
+
+print("Log Loss Decision Tree:%.4f" % LogLoss)
+
+#Random Forest
+#Create decision tree model to data train
+rf = RandomForestClassifier(featuresCol='features', labelCol="label")
+rf_model = rf.fit(data_train)
+
+#transform model to data test
+rf_result = rf_model.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+rf_result.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Random Forest Evaluation
+#Evaluate model by calculatin accuracy and area under curve (AUC)
+rf_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+rf_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+rf_AUC  = rf_eval.evaluate(rf_result)
+rf_ACC  = rf_eval2.evaluate(rf_result, {rf_eval2.metricName:"accuracy"})
+
+print("Decision Tree Performance Measure")
+print("Accuracy = %0.2f" % rf_ACC)
+print("AUC = %.2f" % rf_AUC)
+
+#ROC Grafik
+PredAndLabels           = rf_result.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Random Forest Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Random Forest')
+plt.legend(loc="lower right")
+plt.show()
+
+#Confusion Matrix
+cm_rf_result = rf_result.crosstab("prediction", "label")
+cm_rf_result = cm_rf_result.toPandas()
+cm_rf_result
+
+#calculate accurary,sensitivity, specificity and precision 
+TP = cm_rf_result["1"][0]
+FP = cm_rf_result["0"][0]
+TN = cm_rf_result["0"][1]
+FN = cm_rf_result["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = rf_AUC
+Gini_rf= (2 * AUC -1)
+
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_rf)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+rf_proba=rf_result.select('probability')
+
+#Convert rf_probaspark dataframe to numpy array
+rf_proba= np.array(rf_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+rf_proba=rf_proba.reshape(-1, rf_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Random Forest
+LogLoss = log_loss(y_test, rf_proba) 
+
+print("Log Loss Random Forest:%.4f" % LogLoss)
+
+#Random Forest With Hyper-Parameter
+#define random forest model
+rf_hyper= RandomForestClassifier(featuresCol='features', labelCol="label")
+
+# Hyper-Parameter Tuning
+paramGrid_rf = ParamGridBuilder() \
+    .addGrid(rf_hyper.numTrees, [40, 60, 80, 100]) \
+    .build()
+crossval_rf = CrossValidator(estimator=rf_hyper,
+                             estimatorParamMaps=paramGrid_rf,
+                             evaluator=BinaryClassificationEvaluator(),
+                             numFolds=3) 
+#fit model to data train
+rf_model_hyper=crossval_rf.fit(data_train)
+
+#transfrom model to data test
+rf_result_hyper = rf_model_hyper.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+rf_result_hyper.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Random Forest With Hyper-Parameter Evaluation
+#Evaluate model by calculating accuracy and area under curve (AUC)
+rf_hyper_eval = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+rf_hyper_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+rf_hyper_AUC  = rf_hyper_eval.evaluate(rf_result_hyper)
+rf_hyper_ACC  = rf_hyper_eval2.evaluate(rf_result_hyper, {rf_hyper_eval2.metricName:"accuracy"})
+
+print("Decision Tree Performance Measure")
+print("Accuracy = %0.2f" % rf_hyper_ACC)
+print("AUC = %.2f" % rf_hyper_AUC)
+
+#ROC Grafik
+PredAndLabels           = rf_result_hyper.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Random Forest Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Random Forest')
+plt.legend(loc="lower right")
+plt.show()
+
+#Confusion Matrix
+cm_rf_result_hyper = rf_result_hyper.crosstab("prediction", "label")
+cm_rf_result_hyper = cm_rf_result_hyper.toPandas()
+cm_rf_result_hyper
+
+#calculate accuracy, sensitivity, specificity and precision
+TP = cm_rf_result_hyper["1"][0]
+FP = cm_rf_result_hyper["0"][0]
+TN = cm_rf_result_hyper["0"][1]
+FN = cm_rf_result_hyper["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = rf_hyper_AUC
+Gini_rf_hyper= (2 * AUC -1)
+
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_rf_hyper)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+rf_hyper_proba=rf_result_hyper.select('probability')
+
+#Convert pyspark dataframe to numpy array
+rf_hyper_proba= np.array(rf_hyper_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+rf_hyper_proba=rf_hyper_proba.reshape(-1, rf_hyper_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Random Forest hyper parameter
+LogLoss = log_loss(y_test, rf_hyper_proba) 
+
+print("Log Loss Random Forest:%.4f" % LogLoss)
+
+#Gradient Boosting
+#create gradient boosting model in data train
+gbt = GBTClassifier(featuresCol="features", labelCol="label",  maxIter=10)
+gbt_model = gbt.fit(data_train)
+
+#transfrom model to data test
+gbt_result = gbt_model.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+gbt_result.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Gradient Boosting Evaluation
+#Evaluate model by calculating accuracy and area under curve (AUC)
+gbt_eval = BinaryClassificationEvaluator(rawPredictionCol="probability",labelCol="label")
+gbt_eval2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+gbt_AUC  = gbt_eval.evaluate(gbt_result)
+gbt_ACC  = gbt_eval2.evaluate(gbt_result, {gbt_eval2.metricName:"accuracy"})
+
+print("Gradient Boosted Tree Performance Measure")
+print("Accuracy = %0.2f" % gbt_ACC)
+print("AUC = %.2f" % gbt_AUC)
+
+#ROC Grafik
+PredAndLabels           = gbt_result.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Gradient Boosting Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Gradient Boosting')
+plt.legend(loc="lower right")
+plt.show()
+
+#Confusion Matrix
+cm_gbt_result = gbt_result.crosstab("prediction", "label")
+cm_gbt_result = cm_gbt_result.toPandas()
+cm_gbt_result
+
+#calculate accuracy, sensitivity, specificity and precision
+TP = cm_gbt_result["1"][0]
+FP = cm_gbt_result["0"][0]
+TN = cm_gbt_result["0"][1]
+FN = cm_gbt_result["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = gbt_AUC
+Gini_gbt= (2 * AUC -1)
+
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_gbt)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+gbt_proba=gbt_result.select('probability')
+
+#Convert pyspark dataframe to numpy array
+gbt_proba= np.array(gbt_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+gbt_proba=gbt_proba.reshape(-1, gbt_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Gradient Boosting
+LogLoss = log_loss(y_test, gbt_proba) 
+
+print("Log Loss Gradient Boosting:%.4f" % LogLoss)
+
+#Gradient Boosting With Hyper-Parameter
+#define gradient boosting model
+gbt_hyper= GBTClassifier(featuresCol="features", labelCol="label")
+
+# Hyper-Parameter Tuning
+paramGrid_gbt = ParamGridBuilder() \
+    .addGrid(gbt_hyper.maxIter, [10])\
+    .addGrid(gbt_hyper.maxDepth, [6, 7,10]) \
+    .build()
+crossval_gbt = CrossValidator(estimator=gbt_hyper,
+                             estimatorParamMaps=paramGrid_gbt,
+                             evaluator=BinaryClassificationEvaluator(),
+                             numFolds=3)
+#fit model to data train
+gbt_model_hyper = crossval_gbt.fit(data_train)
+
+#transfrom model to data test
+gbt_result_hyper = gbt_model_hyper.transform(data_test)
+
+#view id, label, prediction and probability from result of modelling
+gbt_result_hyper.select('Id', 'label', 'prediction', 'probability').show(5)
+
+#Gradient Boosting With Hyper-Parameter Evaluation
+#Evaluate model by calculating accuracy and area under curve (AUC)
+gbt_eval_hyper = BinaryClassificationEvaluator(rawPredictionCol="probability", labelCol="label")
+gbt_eval_hyper2= MulticlassClassificationEvaluator(predictionCol="prediction", labelCol="label")
+gbt_hyper_AUC  = gbt_eval_hyper.evaluate(gbt_result_hyper)
+gbt_hyper_ACC  = gbt_eval_hyper2.evaluate(gbt_result_hyper, {gbt_eval_hyper2.metricName:"accuracy"})
+
+
+print("Gradient Boosted Tree Performance Measure")
+print("Accuracy = %0.2f" % gbt_hyper_ACC)
+print("AUC = %.2f" % gbt_hyper_AUC)
+
+#ROC Grafik
+PredAndLabels           = gbt_result_hyper.select("probability", "label")
+PredAndLabels_collect   = PredAndLabels.collect()
+PredAndLabels_list      = [(float(i[0][0]), 1.0-float(i[1])) for i in PredAndLabels_collect]
+PredAndLabels           = sc.parallelize(PredAndLabels_list)
+
+metrics = BinaryClassificationMetrics(PredAndLabels)
+
+# Area under ROC
+print("Gradient Boosting Area Under ROC")
+print("Area under ROC = %.2f" % metrics.areaUnderROC)
+
+# Visualization
+FPR = dict()                                                        # FPR: False Positive Rate
+tpr = dict()                                                        # TPR: True Positive Rate
+roc_auc = dict()
+ 
+y_test = [i[1] for i in PredAndLabels_list]
+y_score = [i[0] for i in PredAndLabels_list]
+ 
+fpr, tpr, _ = roc_curve(y_test, y_score)
+roc_auc = auc(fpr, tpr)
+ 
+plt.figure(figsize=(5,4))
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Gradient Boosting')
+plt.legend(loc="lower right")
+plt.show()
+
+#confusion Matrix
+cm_gbt_result_hyper = gbt_result_hyper.crosstab("prediction", "label")
+cm_gbt_result_hyper = cm_gbt_result_hyper.toPandas()
+cm_gbt_result_hyper
+
+#calculate accuracy, sensitivity, specificity and precision
+TP = cm_gbt_result_hyper["1"][0]
+FP = cm_gbt_result_hyper["0"][0]
+TN = cm_gbt_result_hyper["0"][1]
+FN = cm_gbt_result_hyper["1"][1]
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+Sensitivity = TP/(TP+FN)
+Specificity = TN/(TN+FP)
+Precision = TP/(TP+FP)
+
+print ("Accuracy = %0.2f" %Accuracy )
+print ("Sensitivity = %0.2f" %Sensitivity )
+print ("Specificity = %0.2f" %Specificity )
+print ("Precision = %0.2f" %Precision )
+
+#Calculate Gini Coefficient from AUC
+AUC = gbt_hyper_AUC
+Gini_gbt_hyper= (2 * AUC -1)
+
+print("AUC=%.2f" % AUC)
+print("GINI ~=%.2f" % Gini_gbt_hyper)
+
+#Calculate Log Loss in pandas dataframe
+#Create Dataframe to Calculate Log Loss
+y_test= data_test.select('label')
+gbt_hyper_proba=gbt_result_hyper.select('probability')
+
+#Convert pyspark dataframe to numpy array
+gbt_hyper_proba= np.array(gbt_hyper_proba.select('probability').collect())
+
+#Convert numpy array 3 dimentional to 2 dimentional
+gbt_hyper_proba=gbt_hyper_proba.reshape(-1, gbt_hyper_proba.shape[-1])
+
+#Convert y_test dataframe to pandas dataframe
+y_test=y_test.toPandas()
+
+#Convert y_test pandas dataframe to pandas series
+y_test=pd.Series(y_test['label'].values)
+
+#Calculate log loss from Gradient Boosting hyper parameter
+LogLoss = log_loss(y_test, gbt_hyper_proba) 
+
+print("Log Loss Gradient Boosting:%.4f" % LogLoss)
+
+
+#Implementation Modelling to data test
+#Prediction using Logistic Regression
+#transform logistic regression to data test
+lr_predict = lr_model.transform(test2)
+
+#view id, label, prediction and probability from result of modelling
+lr_predict.select('Id', 'prediction', 'probability').show(5)
+
+#select id and prediction from result of modelling and save in data frame called my_submission
+my_submission=lr_predict.select("Id","prediction")
+
+#convert to Pandas dataframe
+my_submission=my_submission.toPandas()
+
+#save to csv
+my_submission.to_csv('E:/Datalabs/Classification/Home_Quote_conversion/my_submission.csv', index = False, header = True)
+
+
+#Prediction using Gradient Boosting
+#transfrom gradient boosting model to data test
+gbt_predict = gbt_model.transform(test_data_feat)
+
+#view id, label, prediction and probability from result of modelling
+gbt_predict.select('Id', 'prediction', 'probability').show(5)
+
+#select id and prediction from result of modelling and save in data frame called my_submission
+my_submission2=gbt_predict.select("Id","prediction")
+
+#convert to Pandas dataframe
+my_submission2=my_submission2.toPandas()
+
+#save to csv
+my_submission2.to_csv('E:/Datalabs/Classification/Home_Quote_conversion/my_submission2.csv', index = False, header = True)
