@@ -23,20 +23,27 @@ In general, the steps of classification in machine learning are:
   
 * Define categorical and numerical variables.
   In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually. This part also apply in both data train and data test.
+  Pictures below is example of code of define categorical and numerical variables in data train.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables1.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables2.png)
+  
   
 * Sample data
    If the dataset is too large, we can take sample of data. 
    Note: this step is optional.
    
 * Check Missing Values.
-  Sometimes the data received is not clean. So, we need to check whether missing values or not. Output from this step is the name of columns which have missing values and the number of missing values. To check missing values, actually I created two method:
+  Sometimes the data received is not clean. So, we need to check whether there are missing values or not. Output from this step is the name of columns which have missing values and the number of missing values. To check missing values, actually I created two method:
    - Using pandas dataframe, 
    - Using pyspark dataframe.
   But the prefer method is method using pyspark dataframe so if dataset is too large we can still calculate / check missing values.
   Both data train and data test has to apply this step.
-
+    Pictures below are example check missing values using pyspark dataframe in data train.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_missing_values.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_missing_values2.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_missing_values3.png)
+  
+  
 * Handle Missing Values.
   The approach that used to handle missing values between numerical and categorical variables is different. For numerical variables I fill the missing values with average in it's columns. While for categorical values I fill missing values use most frequent category in that column, therefore count categories which has max values in each columns is needed. 
  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_missing_values.jpg)
@@ -44,20 +51,34 @@ In general, the steps of classification in machine learning are:
  
 
 * Compare categorical variables in data train and data test.
-  In this step, we check whether categories between data train and data test same or not. Categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
-  
+  In this step, we check whether categories between data train and data test same or not. If not, categories in data test will be equated with data train. This step is needed to avoid error in feature engineering, if there are differences categories between data train and data test the error will appear at feature engineering process in data test so the modelling process cannot be applied in data test.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/function_compare_categorical_variables.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/callfunction_compare_categorical_variables.jpg)
   
   
 * EDA 
-  Create distribution visualization in each variables to get some insight of dataset.
+  Create distribution visualization in each variables to get some insight of dataset. Pictures below are example of visualization of data train.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA1.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA2.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA3.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA4.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA5.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/EDA6.jpg)
+  
   
 * Handle insignificant categories in data train.
-  Sometimes there are categories with very few amount, those categories is called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
+  Sometimes there are categories with very few amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
   Note: the determination of threshold that category have very few amount is based on trial n error. In this case I used threshold 98% for maximum amount and 0.7% for minimum amount. Each categories in a column that have percentage under 0.7% will be replaced with category that has percentage equal or lower than 98%.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/call_insignificant_categories_function.jpg)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function3.jpg)
+  
   
 * Handle insignificant categories in data test.
   To handle insignificant categories in data test, I refer to insignificant categories in data train. Categories that replaced will be equated with data train to avoid differences categories between data train and data test. As known those differences will trigger error in feature angineering and modelling process.
-  
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function4.jpg)
+
+
 * Handle outlier.
   Outlier is observations that fall below lower side or above upper side.
   To handle outlier we approach by replacing the value greater than upper side with upper side value and replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
@@ -71,13 +92,20 @@ In general, the steps of classification in machine learning are:
   Lower side = Q1 - 1.5 * IQR
 
   To calculate quantile in pyspark dataframe I created a function and then created function to calculate uper side, lower side, replacing upper side and replacing lower side. function of replacing upper side and lower side will looping as much as numbers of numerical variables in dataset (data train or data test). This step also apply in both data train and data test.
+  Pictures below are example of handle outlier in data train, for data test the treatment is the same just call the function and apply it to data test.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier2.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/handle_outlier3.png)
 
 * Feature Engineering.
   Before splitting the data train, all categorical variables must be made numerical. There are several approaches to categorical variables in SparkML, including:
   - StringIndexer, which is to encode the string label into the index label by sequencing the string frequency descending and giving the smallest index (0) at most string frequency.
   - One-hot Encoding, which is mapping the label column (string label) on the binary column.
   - Vector assembler, which is mapping all columns in vector.
-  In this step, first I check the distinct values in each categorical columns between data train and data test. If data train has distinct values more than data test in one of or more categorical column, data train and data test will be joined then apply feature engineering on that data combination, length of vector (result of feature engineering) must be same between data train and data test so we can move to the next step, modelling and prediction. But if distinct values between data train and data test same, we will apply feature angineering on data train and data test separately then move to the next step modelling and prediction.
+  In this step, first I check the distinct values in each categorical columns between data train and data test. If data train has distinct values more than data test in one or more categorical column, data train and data test will be joined then apply feature engineering on that data combination - this merger is needed to avoid error in modelling due to differences length of vector between data train and data test- length of vector (result of feature engineering of data combination) must be same between data train and data test so we can move to the next step, modelling and prediction. But if distinct values between data train and data test same, we will apply feature angineering on data train and data test separately then move to the next step modelling and prediction.
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/feature_engineering.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/feature_engineering2.png)
+  ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/call_function_feature_engineering.png)
 
 * Split Data train to train and test.
   This step just apply on data train. In order to make validation on the model that we are used, we need to split data train into train and test data. Data train will be split with percentage: train 70% and test 30% and define seed 24 so the random data that we split will not change. We can define seed with any value.
