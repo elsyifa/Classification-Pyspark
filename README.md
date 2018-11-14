@@ -1,5 +1,5 @@
 # Classification-Pyspark
-This repository of classification template using pyspark.
+This is a repository of classification template using pyspark.
 
 I tried to make a template of classification in machine learning using pyspark. I will try to explain step by step from load data, data cleansing and making a prediction. I created some functions in pyspark to make an automatization, so users just need to update or replace the dataset.
 
