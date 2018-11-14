@@ -1528,7 +1528,7 @@ my_submission=lr_predict.select("Id","prediction")
 my_submission=my_submission.toPandas()
 
 #save to csv
-my_submission.to_csv('E:/Datalabs/Classification/Home_Quote_conversion/my_submission.csv', index = False, header = True)
+my_submission.to_csv('E:/my_submission.csv', index = False, header = True)
 
 
 #Prediction using Gradient Boosting
@@ -1545,4 +1545,4 @@ my_submission2=gbt_predict.select("Id","prediction")
 my_submission2=my_submission2.toPandas()
 
 #save to csv
-my_submission2.to_csv('E:/Datalabs/Classification/Home_Quote_conversion/my_submission2.csv', index = False, header = True)
+my_submission2.to_csv('E:/my_submission2.csv', index = False, header = True)
