@@ -1,21 +1,21 @@
 # Classification-Pyspark
 This is a repository of classification template using pyspark.
 
-I tried to make a template of classification in machine learning using pyspark. I will try to explain step by step from load data, data cleansing and making a prediction. I created some functions in pyspark to make an automatization, so users just need to update or replace the dataset.
+I tried to make a template of classification machine learning using pyspark. I will try to explain step by step from load data, data cleansing and making a prediction. I created some functions in pyspark to make an automatization, so users just need to update or replace the dataset.
 
 To test my template, I used data Home_Quote_Conversion from Kaggle https://www.kaggle.com/c/homesite-quote-conversion. This dataset represent the activity who are interested in buying policies from Homesite. QuoteConversion_Flag indicates whether the customer purchased a policy and the task is to predict QuoteConversion_Flag for each QuoteNumber in the test set.
 
-In general, the steps of classification in machine learning are:
+In general, the steps of classification machine learning are:
 
 * Load libraries
   
-  The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc. Below the capture of all libraries are needed:
+  The first step in applying classification model is we have to load all libraries are needed. The basic libraries for classification are LogisticRegression, RandomForestClassifier, GBTClassifier, etc. Below the capture of all libraries are needed in classification:
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_libraries.png)
 
 
 * Load Data into Spark Dataframe.
   
-  Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter ',' or other. 
+  Because we will work on spark environment so the dataset must be in spark dataframe. In this step, I created function to load data into spark dataframe. To run this function, first we have to define type of file of dataset (text or parquet) and path where dataset is stored and delimeter like ',' for example or other. 
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/load_dataset_function.png)
   
   
@@ -27,7 +27,7 @@ In general, the steps of classification in machine learning are:
   
 * Define categorical and numerical variables.
   
-  In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually. This part also apply in both data train and data test.
+  In this step, I tried to split the variables based on it's data types. If data types of variables is string will be saved in list called **cat_cols** and if data types of variables is integer or double will be saved in list called **num_cols**. This split applied on data train and data test. This step applied to make easier in the following step so I don't need to define categorical and numerical variables manually.
   Pictures below is example of code of define categorical and numerical variables in data train.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables1.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/define_categorical_numerical_variables2.png)
@@ -78,9 +78,9 @@ In general, the steps of classification in machine learning are:
   
 * Handle insignificant categories in data train.
   
-  Sometimes there are categories with fewest amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of catories in each categorical columns. Sometimes this replacing will make better modelling. 
+  Sometimes there are categories with fewest amount, those categories I called insignificant categories. Those insignificant categories will be replaced with the largest numbers of categories in each categorical columns. Sometimes this replacing will make better modelling. 
   
-  Note: the determination of threshold that category have very few amount is based on trial n error. In this case I used threshold 98% for maximum amount and 0.7% for minimum amount. Each categories in a column that have percentage under 0.7% will be replaced with category that has percentage equal or lower than 98%.
+  Note: the determination of threshold that category have fewest amount is based on trial n error. In this case I used threshold 98% for maximum amount and 0.7% for minimum amount. Each categories in a column that have percentage under 0.7% will be replaced with category that has percentage equal or lower than 98%.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/call_insignificant_categories_function.jpg)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/insignificant_categories_function3.jpg)
@@ -95,7 +95,8 @@ In general, the steps of classification in machine learning are:
 * Handle outlier.
   
   Outlier is observations that fall below lower side or above upper side.
-  To handle outlier we approach by replacing the value greater than upper side with upper side value and replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
+  
+  To handle outlier the approach is by replacing the value greater than upper side with upper side value and replacing the value lower than lower side with lower side value. So, we need calculate upper and lower side from quantile value, quantile is probability distribution of variable. In General, there are three quantile:
 
    - Q1 = the value that cut off 25% of the first data when it is sorted in ascending order.
    - Q2 = cut off data, or median, it's 50 % of the data
@@ -195,7 +196,7 @@ In general, the steps of classification in machine learning are:
 
 * Implementation Modelling to data test.
   
-  After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to our data test. In this case, I choose Logistic Regression and Gradient Boosting to make prediction. Then save the prediction into csv file.
+  After all the steps above are executed, now we know which one model that has best evaluation. And that is the perfect model to make prediction our data test. We can choose the top two model from four model then transform that model to data test. In this case, I choose Logistic Regression and Gradient Boosting to make prediction. Then save the prediction into csv file.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/implement_to_data_test2.png)
   
