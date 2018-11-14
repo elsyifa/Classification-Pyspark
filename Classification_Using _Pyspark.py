@@ -100,6 +100,13 @@ len(df.columns), df.printSchema()
 #Print Schema and count number of columns from data test
 len(test_data.columns), test_data.printSchema()
 
+#rename Target to 'label in data train
+df = df.withColumnRenamed('QuoteConversion_Flag','label')
+#rename Id number ('QuoteNumber') to 'Id' in data train
+df = df.withColumnRenamed('QuoteNumber','Id')
+
+#rename Id number ('QuoteNumber') to 'Id' in data test
+test_data = test_data.withColumnRenamed('QuoteNumber','Id')
 
 #drop column Original_Quote_Date from data train
 df_final=df.drop('Original_Quote_Date')
@@ -604,6 +611,15 @@ def Main_feature_engineering(df,df2):
         a=feature_engineering(df)
         b=feature_engineering(df2)        
     return a,b
+
+#call function feature engineering
+%time data2, test2=Main_feature_engineering(df_final, test_data)
+
+#view result of feature engineering in data train
+data2.select('Id', 'features').show(5)
+
+#view result of feature engineering in data test
+test2.select('Id', 'features').show(5)
 
 #Split Data train to train and test
 #Split df_final to train and test, train 70% and test 30%. Define seed 24 so the random data that we split will not change.
