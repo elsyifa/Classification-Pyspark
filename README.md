@@ -45,6 +45,8 @@ In general, the steps of classification machine learning are:
    - Using pyspark dataframe.
   But the prefer method is method using pyspark dataframe so if dataset is too large we can still calculate / check missing values.
   Both data train and data test has to apply this step.
+  This function refer to https://github.com/UrbanInstitute/pyspark-tutorials/blob/master/04_missing-data.ipynb.
+  
     Pictures below are example check missing values using pyspark dataframe in data train.
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_missing_values.png)
   ![alt text](https://github.com/elsyifa/Classification-Pyspark/blob/master/Image/check_missing_values2.png)
