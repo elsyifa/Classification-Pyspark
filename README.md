@@ -1,7 +1,7 @@
 # Classification-Pyspark
 This is a repository of classification template using pyspark.
 
-I tried to make a template of classification machine learning using pyspark. I will try to explain step by step from load data, data cleansing and making a prediction. I created some functions in pyspark to make an automatization, so users just need to update or replace the dataset.
+I tried to make a template of classification machine learning using pyspark. I will try to explain step by step from load data, data cleansing and making a prediction. I created some functions in pyspark to make an automation, so user just need to update or replace the dataset.
 
 To test my template, I used data Home_Quote_Conversion from Kaggle https://www.kaggle.com/c/homesite-quote-conversion. This dataset represent the activity who are interested in buying policies from Homesite. QuoteConversion_Flag indicates whether the customer purchased a policy and the task is to predict QuoteConversion_Flag for each QuoteNumber in the test set.
 
